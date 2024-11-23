@@ -10,14 +10,14 @@ A while ago Portainer added Business Edition branding all over their Community E
     <th>Fix Applied</th>
   </tr>
   <tr>
-    <td><img src="https://raw.githubusercontent.com/JSH32/portainer-remove-be-branding/main/.github/screenshots/with_branding.png" alt="1" width = 500px></td>
-    <td><img src="https://raw.githubusercontent.com/JSH32/portainer-remove-be-branding/main/.github/screenshots/no_branding.png" alt="2" width = 500px></td>
+    <td><img src="https://raw.githubusercontent.com/LordArrin/portainer-remove-be-branding/main/.github/screenshots/with_branding.png" alt="1" width = 500px></td>
+    <td><img src="https://raw.githubusercontent.com/LordArrin/portainer-remove-be-branding/main/.github/screenshots/no_branding.png" alt="2" width = 500px></td>
   </tr> 
 </table>
 
 ## How to use?
 
-_The easiest method is to run Portainer by cloning this repo and using the [compose file](https://github.com/JSH32/portainer-remove-be-branding/tree/main/docker-compose.yml) or the proxy image which serves the script locally._
+_The easiest method is to run Portainer by cloning this repo and using the [compose file](https://github.com/LordArrin/portainer-remove-be-branding/tree/main/docker-compose.yml) or the proxy image which serves the script locally._
 
 This works by using Nginx's `sub_filter` which is able to replace sections of certain pages with preprocessing before sending the page to the user, this means that it will be able to be used in a non-invasive way that will continue to work even if portainer updates.
 
@@ -56,6 +56,6 @@ sub_filter '<base id="base"/>' '<base id="base"/><script src="https://cdn.jsdeli
 
 ### Config Screenshot
 
-![Custom locations config](https://raw.githubusercontent.com/JSH32/portainer-remove-be-branding/master/.github/screenshots/nginx_proxy_manager.png)
+![Custom locations config](https://raw.githubusercontent.com/LordArrin/portainer-remove-be-branding/master/.github/screenshots/nginx_proxy_manager.png)
 
 </details>
