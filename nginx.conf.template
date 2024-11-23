@@ -1,27 +1,42 @@
 server {
-    listen 80;
+    listen "your_port" ssl;
+    server_name server;
+    # Portainer
+    server_tokens off;
+    proxy_hide_header X-Powered-By;
+    gzip off;
 
-    location / {
-        proxy_pass       http://${PORTAINER_HOSTNAME}:${PORTAINER_PORT};
+    ssl_certificate /etc/custom/your_cert.crt;
+    ssl_certificate_key /etc/custom/your_key.key;
 
-        proxy_set_header X-Forwarded-Host   $host;
-        proxy_set_header X-Forwarded-Server $host;
-        proxy_set_header X-Forwarded-For    $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto  $scheme;
-        proxy_set_header X-Real-IP          $remote_addr;
-        proxy_set_header Host               $host;
+    # Настройки SSL (опционально, для улучшения безопасности)
+    ssl_protocols TLSv1.3;
+    ssl_prefer_server_ciphers on;
+    ssl_ciphers "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384";
 
-        # Cnfigure sub filter.
-        proxy_set_header Accept-Encoding    "";
-        sub_filter_once  off;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
+    ssl_dhparam /etc/pki/nginx/dhparam.pem;
 
-        # Replace HTML to include script
-        sub_filter '<base id="base"/>' '<base id="base"/><script src="/remove_be.js"></script>';
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+
+    # Скрипт для удаления рекламы BE лицензии.
+    location /remove_be.js {
+        root /etc/custom/scripts;
+        try_files /remove_be.js =404;
     }
 
-    # Serve script locally from same server.
-    location /remove_be.js {
-        root /var/www;
-        try_files /remove_be.js =404;
+    # Прокси на внутренний сервис
+    location / {
+        proxy_pass http://127.0.0.1:"portainer_port";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        # Настройки для фильтрации
+        proxy_set_header Accept-Encoding    "";
+        sub_filter_once  off;
+        # Добавляем фильтр
+        sub_filter '<base id="base"/>' '<base id="base"/><script src="/remove_be.js"></script>';
     }
 }
