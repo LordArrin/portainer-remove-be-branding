@@ -51,12 +51,9 @@
           '#sideview nav[aria-label="Settings"] li[aria-label="Users"] li:has(a[href="#!/roles"])',
           '#sideview nav[aria-label="Settings"] li[aria-label="Authentication logs"]:has(a[href="#!/auth-logs"])',
           '#sideview li[aria-label="Cluster"] li[aria-label="Security constraints"]',
-          ".text-gray-3.min-h-8.flex-col.flex:nth-of-type(4)",
-          ".col-sm-12 > .widget",
-          ".ng-isolate-scope > .col-sm-12"
         ],
       },
-      // Остальные блоки стилей, как были ранее...
+      // Остальные блоки стилей
       {
         pattern: /.*\/#!\/wizard\/endpoints($|\/create\?.*$)/,
         selectors: [
