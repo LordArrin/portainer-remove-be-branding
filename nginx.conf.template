@@ -1,42 +1,63 @@
 server {
-    listen "your_port" ssl;
-    server_name server;
-    # Portainer
-    server_tokens off;
-    proxy_hide_header X-Powered-By;
+    listen 443 ssl;
+    listen 443 quic;
+    http2 on;
+
+    server_name portainer.adress;
     gzip off;
 
-    ssl_certificate /etc/custom/your_cert.crt;
-    ssl_certificate_key /etc/custom/your_key.key;
+    # Путь к SSL сертификатам
+    ssl_certificate /etc/config/fullchain.crt;  # Полная цепочка сертификатов
+    ssl_trusted_certificate /etc/config/chain.crt;  # Доверенные сертификаты
+    ssl_certificate_key /etc/config/cert.key;  # Закрытый ключ SSL
 
-    # Настройки SSL (опционально, для улучшения безопасности)
-    ssl_protocols TLSv1.3;
-    ssl_prefer_server_ciphers on;
-    ssl_ciphers "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384";
-
-    ssl_session_cache shared:SSL:10m;
-    ssl_session_timeout 10m;
-    ssl_dhparam /etc/pki/nginx/dhparam.pem;
-
+    add_header Alt-Svc 'h3=":443"; h2=":443"; ma=86400';
     add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
 
-    # Скрипт для удаления рекламы BE лицензии.
-    location /remove_be.js {
-        root /etc/custom/scripts;
-        try_files /remove_be.js =404;
+    limit_req zone=one burst=200 nodelay;
+
+    # Обработка скрипта
+    location = /remove_be.js {
+        alias /etc/config/scripts/remove_be.js;
+        default_type application/javascript;
     }
 
-    # Прокси на внутренний сервис
+    # Разрешаем доступ только с локальных IP
+    include /etc/config/localhost.conf;  # Локальные IP
+    deny all;  # Блокируем всех остальных
+
     location / {
-        proxy_pass http://127.0.0.1:"portainer_port";
+      	proxy_pass http://adress:port;
+      	
+      	# Блокируем телеметрию
+      	add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; connect-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; frame-src 'self';" always;
+
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        # Настройки для фильтрации
-        proxy_set_header Accept-Encoding    "";
-        sub_filter_once  off;
-        # Добавляем фильтр
+        
+        # Отключаем сжатие от бэкенда, чтобы sub_filter сработал
+        proxy_set_header Accept-Encoding ""; 
+        
+        # Инъекция
+        sub_filter_once off;
+        sub_filter_types text/html;
         sub_filter '<base id="base"/>' '<base id="base"/><script src="/remove_be.js"></script>';
+    }
+
+    # WebSocket для API и Консоли (важно для /api/websocket/...)
+    location /api/websocket/ {
+        proxy_pass http://adress:port/api/websocket/;
+        
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        
+        # Таймаут для долгой работы в консоли
+        proxy_read_timeout 3600s; 
     }
 }
